@@ -1,14 +1,20 @@
 <html>
 <script src="vision.js"></script>
 <body>
-<button type="button" id="solve_button">Solve</button>
+<button type="button" id="count_button">Count Holes</button>
+<button type="button" id="label_button">Label Holes</button>
 </body>
 <script>
 init();
-var button = document.getElementById("solve_button");
+var count_button = document.getElementById("count_button");
+var label_button = document.getElementById("label_button");
 
-button.onclick = function() { 
+count_button.onclick = function() { 
     countHoles();
+};
+
+label_button.onclick = function() { 
+    labelHoles();
 };
 </script>
 </html>
