@@ -136,3 +136,28 @@ function countHoles () {
     var num_holes = (external_corners - internal_corners)/4;
     alert("Number of holes: " + num_holes);
 }
+
+function labelHoles(){
+    for(var i = 0; i < num_rows; i++){
+        for(var j = 0; j < num_cols; j++){
+            if(cells[i][j] == 1){
+                //a = prior neighbors
+                //if(isEmpty(a)) m = ++label
+                //else m = min(labels(a))
+                //LB[i][j] = m
+                //for x in labels(a) and x != m
+                //  union(m, x, parent)
+                //end
+
+            }
+        }
+    }
+
+    for(var i = 0; i < num_rows; i++){
+        for(var j = 0; j < num_cols; j++){
+            if(cells[i][j] == 1){
+                //LB[i][j] = find(LB[i][j], parent)
+            }
+        }
+    }
+}
