@@ -12,6 +12,40 @@ var context;
 //var cells;
 var grid;
 
+var initial_pattern =
+"00000000000000000000001111000000"+
+"01001111111111111000000001000000"+
+"01010000000000001001111111111110"+
+"01010011111101001001000000000010"+
+"01010100000101001001011111111010"+
+"01011001010101001001010000001010"+
+"01000001011101001001010111001010"+
+"01001001000001001001010111001010"+
+"01001000111111001001010001001010"+
+"01001011100001001111010001001010"+
+"01001100001111000000011111001010"+
+"01000000000001000000000000001010"+
+"01111111111111111111111111111010"+
+"00000000000000000000000000000010"+
+"00111111111111111111111111000100"+
+"00000000000000000000000000111000"+
+"00000111111111111111111110001000"+
+"00011111100000000000000001101000"+
+"00100000000000000000000110101000"+
+"00100000001111111111110001101000"+
+"00100001110000000000001100001000"+
+"00100010000000111110000011001000"+
+"00100100000111111111100001001000"+
+"00100100111111111111110011001000"+
+"00100100000000000000000110001000"+
+"00100010000000000000000100011000"+
+"00100001111111111111111000111000"+
+"00110000000000000000000011111000"+
+"00111100000000000000011111111001"+
+"00011111111111111111111111110011"+
+"00000000000000000000000000000111"+
+"00000000000000000001111111111111";
+
 function Grid(r, c){
     this.rows = r;
     this.cols = c;
@@ -34,7 +68,7 @@ function Grid(r, c){
 
 function init(){    
     //set number of rows, number of columns, cell width, cell height
-    update(10,10,50,50);
+    update(32,32,20,20);
 
     //create canvas and add event listener for mouse click
     canvas = document.createElement("canvas");
@@ -48,6 +82,9 @@ function init(){
     context = canvas.getContext("2d");
         
     grid = new Grid(num_rows, num_cols);                
+    grid.each(function(i, j) {
+        grid.cells[i][j] = initial_pattern.charAt(i*j+i);
+    });
     redraw();
 }
 
@@ -171,9 +208,6 @@ function labelHoles(labelElement){
                    if (x < min){
                        min = x;
                    }
-                   //if (x != label){
-                    //   parent_arr[x] = label;
-                   //}
                }
             }
             if(empty){
@@ -187,7 +221,7 @@ function labelHoles(labelElement){
             //union labels
             for(var k = 0; k < 4; k++){
                 var x = pn[k];
-                if (x != min){
+                if (x != 0 && x != min){
                     union(min, x, parent_arr);
                 }
             }
@@ -204,14 +238,34 @@ function labelHoles(labelElement){
     });
 
     var label_str = "";
-    /*
+
+    label_str = "label:  ";
+    for(var i = 1; i < parent_arr.length; i++){
+        if(i < 10){
+            label_str += "0";
+        }
+        label_str += i + " ";
+    }
+
+    label_str += "\nparent: ";
+    for(var i = 1; i < parent_arr.length; i++){
+        if(parent_arr[i] < 10){
+            label_str += "0";
+        }
+        label_str += parent_arr[i] + " ";
+    }
+
+    label_str += "\n\nlabel grid:\n";
     for(var i = 0; i < label_grid.rows; i++){
         for(var j = 0; j < label_grid.cols; j++){
-            label_str += label_grid.cells[i][j] + " "
+            if(label_grid.cells[j][i] < 10){
+                label_str += "0";
+            }
+            label_str += label_grid.cells[j][i] + " ";
         }
         label_str += "\n";
     }
-    */
+
     labelElement.innerHTML = label_str;
 }
 
@@ -233,27 +287,24 @@ function prior_neighbors(i, j, cells){
             //prior neighbors
             var prior_neighbors = new Array(4);
            
-            //ignore ioob exceptions 
+            prior_neighbors[0] = 0;
+            prior_neighbors[1] = 0;
+            prior_neighbors[2] = 0;
+            prior_neighbors[3] = 0;
+
+            //check for ioob
             try{
-                prior_neighbors[0] = cells[i-1][j-1];
-            }catch(e){
-                prior_neighbors[0] = 0;
-            }
-            try{
-                prior_neighbors[1] = cells[i][j-1];
-            }catch(e){
-                prior_neighbors[1] = 0;
-            }
-            try{
-                prior_neighbors[2] = cells[i+1][j-1];
-            }catch(e){
-                prior_neighbors[2] = 0;
-            }
-            try{
-                prior_neighbors[3] = cells[i-1][j];
-            }catch(e){
-                prior_neighbors[3] = 0;
-            }
+                if(j > 0){
+                    if(i > 0){
+                        prior_neighbors[0] = cells[i-1][j-1];
+                    }
+                    prior_neighbors[1] = cells[i][j-1];
+                    prior_neighbors[2] = cells[i+1][j-1];
+                }
+                if(i > 0){
+                    prior_neighbors[3] = cells[i-1][j];
+                }
+            }catch(e){}
             
             return prior_neighbors;
 }
