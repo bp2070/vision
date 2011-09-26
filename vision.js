@@ -148,6 +148,73 @@ function countHoles () {
     alert("Number of holes: " + num_holes);
 }
 
+function labelHoles(labelElement){
+    var label_grid = new Grid(num_rows, num_cols);
+    var label = 1;
+    var parent_arr = new Array();
+    parent_arr.push(0);
+
+    //1st pass - for each cell in the grid 
+    label_grid.each(function(j, i) {
+        //if cell is filled
+        if(grid.cells[i][j] == 1){
+           
+            var pn = prior_neighbors(i, j, label_grid.cells);
+
+            //if pn is empty min = ++label
+            var empty = true;
+            var min = label;
+            for(var k = 0; k < 4; k++){
+               var x= pn[k];
+               if (x != 0){
+                   empty = false;
+                   if (x < min){
+                       min = x;
+                   }
+                   //if (x != label){
+                    //   parent_arr[x] = label;
+                   //}
+               }
+            }
+            if(empty){
+                parent_arr.push(0);
+                label++;
+            }
+
+            //assign label 
+            label_grid.cells[i][j] = min;
+
+            //union labels
+            for(var k = 0; k < 4; k++){
+                var x = pn[k];
+                if (x != min){
+                    union(min, x, parent_arr);
+                }
+            }
+        }
+    });
+
+    //2nd pass - for each cell in the grid
+    label_grid.each(function(i, j) {
+        //if cell is filled
+        if(grid.cells[i][j] == 1){
+            //assign parent label
+            label_grid.cells[i][j] = find(label_grid.cells[i][j], parent_arr);
+        }
+    });
+
+    var label_str = "";
+    /*
+    for(var i = 0; i < label_grid.rows; i++){
+        for(var j = 0; j < label_grid.cols; j++){
+            label_str += label_grid.cells[i][j] + " "
+        }
+        label_str += "\n";
+    }
+    */
+    labelElement.innerHTML = label_str;
+}
+
 function find(i, parent_arr){
     while (parent_arr[i] != 0){
         i = parent_arr[i];
@@ -162,56 +229,31 @@ function union(x, y, parent_arr){
         parent_arr[k] = j;
     }
 }
-
-function labelHoles(){
-    var label_grid = new Grid(num_rows, num_cols);
-    var label = 0;
-    var parent_arr = new Array();
-    parent_arr.push(0);
-
-    label_grid.each(function(i, j) {
-        if(grid.cells[i][j] == 1){
+function prior_neighbors(i, j, cells){
             //prior neighbors
             var prior_neighbors = new Array(4);
-            prior_neighbors[0] = label_grid.cells[i-1][j-1];
-            prior_neighbors[1] = label_grid.cells[i][j-1];
-            prior_neighbors[2] = label_grid.cells[i+1][j-1];
-            prior_neighbors[3] = label_grid.cells[i-1][j];
-
-            //if prior_neighbors is empy m = ++label
-            var empty = true;
-            var min = 0;
-            for(var k = 0; k < 4; k++){
-                var x= prior_neighbors[k];
-               if (x != 0){
-                   if (x != label){
-                       parent_arr[x] = label;
-                   }
-                   empty = false;
-               }
-               else if (min == 0 || x < min){
-                   min = x;
-               }
+           
+            //ignore ioob exceptions 
+            try{
+                prior_neighbors[0] = cells[i-1][j-1];
+            }catch(e){
+                prior_neighbors[0] = 0;
             }
-            if(empty){
-                parent_arr.push(0);
-                min = label;
-                label++;
+            try{
+                prior_neighbors[1] = cells[i][j-1];
+            }catch(e){
+                prior_neighbors[1] = 0;
             }
-            label_grid.cells[i][j] = min;
-
-            for(var k = 0; k < 4; k++){
-                var x = prior_neighbors[k];
-                if (x != min){
-                    union(min, x, parent_arr);
-                }
+            try{
+                prior_neighbors[2] = cells[i+1][j-1];
+            }catch(e){
+                prior_neighbors[2] = 0;
             }
-        }
-    });
-
-    label_grid.each(function(i, j) {
-        if(grid.cells[i][j] == 1){
-            label_grid.cells[i][j] = find(label_grid.cells[i][j], parent_arr);
-        }
-    });
+            try{
+                prior_neighbors[3] = cells[i-1][j];
+            }catch(e){
+                prior_neighbors[3] = 0;
+            }
+            
+            return prior_neighbors;
 }
