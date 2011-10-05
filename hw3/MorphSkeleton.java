@@ -5,15 +5,19 @@ import java.util.Stack;
 
 class MorphSkeleton {
     private static final int SIZE = 140;
-    private static Stack<int[][]> skeletons = new Stack<int[][]>();
 
     public static void main(String[] args)throws Exception {
         int[][] image = read("f1.raw");
-        int[][] skeleton = findSkeleton(image);
+        Stack<int[][]> skeletons = findSkeleton(image);
+
+        int[][] skeleton = init();
+        for(int[][] s : skeletons){
+            skeleton = union(skeleton, s);
+        }
+
         write(skeleton, "skeleton.raw");
-        System.out.println(skeletons.size());
-        int[][] rebuilt_image = buildImage();
-        write(rebuilt_image, "rebuilt_image.raw");
+
+        buildImage(skeletons);
     }
 
     public static int[][] read(String file) throws IOException {
@@ -98,34 +102,36 @@ class MorphSkeleton {
         return erode(dilate(image));
     }
 
-    public static int[][] findSkeleton(int[][] image) {
-        return findSkeleton(image, init());
+    public static Stack<int[][]> findSkeleton(int[][] image) {
+        return findSkeleton(image, new Stack<int[][]>());
     }
 
-    public static int[][] findSkeleton(int[][]image_a, int[][]skeleton_image) {
-        int[][] image_b = erode(image_a);
-
+    public static Stack<int[][]> findSkeleton(int[][]image_a, Stack<int[][]> skeletons) {
         //base case
-        if(isEmpty(image_b)) {
-            return skeleton_image;
+        if(isEmpty(image_a)) {
+            return skeletons;
         }
 
+        int[][] image_b = erode(image_a);
         //recursive case
         int[][] sn = diff(image_a, dilate(image_b));
         skeletons.push(sn);
-        skeleton_image = union(skeleton_image, sn); 
-        return findSkeleton(image_b, skeleton_image);
+        //skeleton_image = union(skeleton_image, sn); 
+        return findSkeleton(image_b, skeletons);
     }
 
-    public static int[][] buildImage(){
+    public static int[][] buildImage(Stack<int[][]> skeletons){
         int[][] image = init();
 
         while(!skeletons.empty()){
             int[][] s = skeletons.pop();
-            for(int i = 0; i < skeletons.size()+1; i++){
+            for(int i = 0; i < skeletons.size(); i++){
                 s = dilate(s);
             }
             image = union(image, s);
+            try{
+                write(image, "rebuilt_image"+skeletons.size()+".raw");
+            }catch(IOException ioe){}
         }
 
         return image;
