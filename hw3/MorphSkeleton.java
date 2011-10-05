@@ -1,18 +1,19 @@
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.Stack;
 
 class MorphSkeleton {
     private static final int SIZE = 140;
-    private static int n = 0;
+    private static Stack<int[][]> skeletons = new Stack<int[][]>();
 
     public static void main(String[] args)throws Exception {
         int[][] image = read("f1.raw");
         int[][] skeleton = findSkeleton(image);
-        write(skeleton, "out.raw");
-        System.out.println(n);
+        write(skeleton, "skeleton.raw");
+        System.out.println(skeletons.size());
+        int[][] rebuilt_image = buildImage();
+        write(rebuilt_image, "rebuilt_image.raw");
     }
 
     public static int[][] read(String file) throws IOException {
@@ -37,7 +38,7 @@ class MorphSkeleton {
                 if(image[i][j] == 1) {
                     outputStream.write(0);
                 }
-                else outputStream.write(255);
+                else outputStream.write(Byte.MAX_VALUE);
             }
         }
         outputStream.close();
@@ -110,10 +111,24 @@ class MorphSkeleton {
         }
 
         //recursive case
-        n++;
-        int[][] diff_image = diff(image_a, dilate(image_b));
-        skeleton_image = union(skeleton_image, diff_image);
+        int[][] sn = diff(image_a, dilate(image_b));
+        skeletons.push(sn);
+        skeleton_image = union(skeleton_image, sn); 
         return findSkeleton(image_b, skeleton_image);
+    }
+
+    public static int[][] buildImage(){
+        int[][] image = init();
+
+        while(!skeletons.empty()){
+            int[][] s = skeletons.pop();
+            for(int i = 0; i < skeletons.size()+1; i++){
+                s = dilate(s);
+            }
+            image = union(image, s);
+        }
+
+        return image;
     }
 
     //set difference
