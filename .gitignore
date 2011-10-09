@@ -1,0 +1,13 @@
+# misc
+*.zip
+
+# java
+*.class
+build/
+lib/
+
+# latex
+*.aux
+*.log
+*.pdf
+*.ps
