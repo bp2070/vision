@@ -18,8 +18,12 @@ import java.io.IOException;
 class DRView {
 
     public static int[][] image;
-    private static int SIZE = 140;
+    public static int[][] original_image;
+    public static int[][] saved_image;
+    private static int SIZE = 128;
     public static JTextField filename_field;
+    public static JTextField open_amount;
+    public static JTextField close_amount;
     public static JLabel image_label;
     public static JFrame frame;
     public static JPanel panel;
@@ -29,6 +33,8 @@ class DRView {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch(Exception e) {}
         this.image = image;
+        this.original_image = image;
+        this.saved_image = image;
     }
 
     public void setup() {
@@ -57,6 +63,14 @@ class DRView {
 //            }
 //        });
 
+        JButton save_btn = new JButton("Save Image");
+        save_btn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent ae){
+                saved_image = image;
+            }
+        });
+
         JButton erode_btn = new JButton("Erode");
         erode_btn.addActionListener(new ActionListener() {
             @Override
@@ -75,23 +89,52 @@ class DRView {
             }
         });
 
+        open_amount = new JTextField(20);
         JButton open_btn = new JButton("Open");
         open_btn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
-                image = DigitRecognizer.open(image);
+                int n = 1;
+                try{
+                    n = Integer.valueOf(open_amount.getText());
+                }catch(Exception e){}
+                image = DigitRecognizer.open(image, n);
                 updateImage(image);
             }
         });
 
+        close_amount = new JTextField(20);
         JButton close_btn = new JButton("Close");
         close_btn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
-                image = DigitRecognizer.close(image);
+                int n = 1;
+                try{
+                    n = Integer.valueOf(close_amount.getText());
+                }catch(Exception e){}
+                image = DigitRecognizer.close(image, n);
                 updateImage(image);
             }
         });
+
+        JButton diff_btn = new JButton("Current - Original");
+        diff_btn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent ae){
+                image = DigitRecognizer.diff(image, original_image);
+                updateImage(image);
+            }
+        });
+
+        JButton diff_btn2 = new JButton("Current - Saved");
+        diff_btn2.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent ae){
+                image = DigitRecognizer.diff(image, saved_image);
+                updateImage(image);
+            }
+        });
+        
 
         panel = new JPanel();
         GroupLayout layout = new GroupLayout(panel);
@@ -100,7 +143,7 @@ class DRView {
         layout.setHorizontalGroup(layout.createParallelGroup()
                                   .addGroup(layout.createSequentialGroup()
                                             .addComponent(filename_field)
-                                            //.addComponent(load_btn)
+                                            .addComponent(save_btn)
                                            )
                                   .addGap(10)
                                   .addGroup(layout.createSequentialGroup()
@@ -108,8 +151,16 @@ class DRView {
                                             .addGroup(layout.createParallelGroup()
                                                     .addComponent(dilate_btn)
                                                     .addComponent(erode_btn)
-                                                    .addComponent(open_btn)
-                                                    .addComponent(close_btn)
+                                                    .addGroup(layout.createSequentialGroup()
+                                                        .addComponent(open_btn)
+                                                        .addComponent(open_amount)
+                                                        )
+                                                    .addGroup(layout.createSequentialGroup()
+                                                        .addComponent(close_btn)
+                                                        .addComponent(close_amount)
+                                                        )
+                                                    .addComponent(diff_btn)
+                                                    .addComponent(diff_btn2)
                                                      )
                                            )
                                  );
@@ -117,7 +168,7 @@ class DRView {
         layout.setVerticalGroup(layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup()
                                           .addComponent(filename_field)
-                                          //.addComponent(load_btn)
+                                          .addComponent(save_btn)
                                          )
                                 .addGap(10)
                                 .addGroup(layout.createParallelGroup()
@@ -125,8 +176,16 @@ class DRView {
                                           .addGroup(layout.createSequentialGroup()
                                                   .addComponent(dilate_btn)
                                                   .addComponent(erode_btn)
-                                                  .addComponent(open_btn)
-                                                  .addComponent(close_btn)
+                                                  .addGroup(layout.createParallelGroup()    
+                                                    .addComponent(open_btn)
+                                                    .addComponent(open_amount)
+                                                    )
+                                                  .addGroup(layout.createParallelGroup()
+                                                    .addComponent(close_btn)
+                                                    .addComponent(close_amount)
+                                                    )
+                                                  .addComponent(diff_btn)
+                                                  .addComponent(diff_btn2)
                                                    )
                                          )
                                );
@@ -140,6 +199,7 @@ class DRView {
     public void loadImage() {
         try {
             image = DigitRecognizer.read(filename_field.getText());
+            original_image = image;
             updateImage(image);
             frame.pack();
         } catch(IOException ioe) {}
