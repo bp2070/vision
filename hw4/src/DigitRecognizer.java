@@ -9,10 +9,8 @@ import java.util.ArrayList;
 class DigitRecognizer {
 
     private static int SIZE = 128;
-
-    public static int[][] image;
     public static List<Integer> parent_arr;
-    public static int[][] label_image;
+    public static int[][] labeled_image;
 
     public static DRView view;
 
@@ -25,37 +23,44 @@ class DigitRecognizer {
 
         image_a = read("six.raw");
         image_a = center(image_a);
-        image_b = close(image_a, 26);
-        image_c = dilate(erode(diff(image_b, image_a)));
+        image_a = close(image_a, 3);
+        image_b = close(image_a, 20);
+        image_c = diff(image_b, image_a);
 
         labelHoles(image_c);
+        for(int j = 0; j < SIZE; j++) {
+            for(int k = 0; k < SIZE; k++) {
+                System.out.print(labeled_image[j][k]);
+            }
+            System.out.println();
+        }
+        System.out.println();
+        System.out.println();
 
-        for(int i = 1; i < parent_arr.size(); i++){
+        for(int i = 1; i < parent_arr.size(); i++) {
             int[][] subimage = init();
-            if(parent_arr.get(i) == 0){
-                subimage = getHole(label_image, i); 
+            if(parent_arr.get(i) == 0) {
+                subimage = getHole(labeled_image, i);
                 image_d = diff(dilate(subimage), image_a);
                 image_e = diff(image_d, subimage);
-                
-                //remove holes with area less than 2
-//                image_e = clean(image_e, 2);
-                
-                for(int j = 0; j < SIZE; j++){
-                    for(int k = 0; k < SIZE; k++){
+                image_e = clean(image_e);
+
+                for(int j = 0; j < SIZE; j++) {
+                    for(int k = 0; k < SIZE; k++) {
                         System.out.print(image_e[j][k]);
                     }
                     System.out.println();
                 }
-               System.out.println(); 
-               System.out.println(); 
+                System.out.println();
+                System.out.println();
             }
+
         }
 
+        view = new DRView();
+        view.setup();
 
-       // view = new DRView(image);
-      //  view.setup();
-
-     //   view.updateImage(image_e);
+        //view.updateImage(image_e);
 
         /*
                 for(int i = 0; i < SIZE; i++){
@@ -92,25 +97,25 @@ class DigitRecognizer {
         return image;
     }
 
-    public static int[][] center(int[][] image){
+    public static int[][] center(int[][] image) {
         int min_x = Integer.MAX_VALUE;
         int max_x = 0;
         int min_y = Integer.MAX_VALUE;
         int max_y = 0;
 
-        for(int i = 0; i < SIZE; i++){
-            for(int j = 0; j < SIZE; j++){
-                if(image[i][j] == 1){
-                    if(i > max_y){
+        for(int i = 0; i < SIZE; i++) {
+            for(int j = 0; j < SIZE; j++) {
+                if(image[i][j] == 1) {
+                    if(i > max_y) {
                         max_y = i;
                     }
-                    if(i < min_y){
+                    if(i < min_y) {
                         min_y = i;
                     }
-                    if(j > max_x){
+                    if(j > max_x) {
                         max_x = j;
                     }
-                    if(j < min_x){
+                    if(j < min_x) {
                         min_x = j;
                     }
                 }
@@ -125,11 +130,11 @@ class DigitRecognizer {
 
         int[][] translated_image = init();
 
-        for(int i = 0; i < SIZE; i++){
-            for(int j = 0; j < SIZE; j++){
-                try{
+        for(int i = 0; i < SIZE; i++) {
+            for(int j = 0; j < SIZE; j++) {
+                try {
                     translated_image[i+offset_x][j+offset_y] = image[i][j];
-                }catch(Exception e){}
+                } catch(Exception e) {}
             }
         }
 
@@ -269,7 +274,7 @@ class DigitRecognizer {
     }
 
     public static void labelHoles(int[][] image_a) {
-        label_image = init();
+        labeled_image = init();
         int label = 1;
         parent_arr = new ArrayList<Integer>();
         parent_arr.add(0);
@@ -279,7 +284,7 @@ class DigitRecognizer {
             for(int j = 0; j < SIZE; j++) {
                 if(image_a[i][j] == 1) {
 
-                    int[] pn = prior_neighbors(i, j, label_image);
+                    int[] pn = prior_neighbors(i, j, labeled_image);
 
                     //if pn is empty min = ++label
                     boolean empty = true;
@@ -299,7 +304,7 @@ class DigitRecognizer {
                     }
 
                     //assign label
-                    label_image[i][j] = min;
+                    labeled_image[i][j] = min;
 
                     //union labels
                     for(int k = 0; k < 4; k++) {
@@ -316,7 +321,7 @@ class DigitRecognizer {
         for(int i = 0; i < SIZE; i++) {
             for(int j = 0; j < SIZE; j++) {
                 if(image_a[i][j] == 1) {
-                    label_image[i][j] = find(label_image[i][j], parent_arr);
+                    labeled_image[i][j] = find(labeled_image[i][j], parent_arr);
                 }
             }
         }
@@ -338,7 +343,7 @@ class DigitRecognizer {
         }
     }
 
-    public static int[] prior_neighbors(int i, int j, int[][] cells) {
+    public static int[] prior_neighbors(int i, int j, int[][] image) {
         //prior neighbors
         int[] prior_neighbors = new int[4];
 
@@ -351,25 +356,25 @@ class DigitRecognizer {
         try {
             if(j > 0) {
                 if(i > 0) {
-                    prior_neighbors[0] = cells[i-1][j-1];
+                    prior_neighbors[0] = image[i-1][j-1];
                 }
-                prior_neighbors[1] = cells[i][j-1];
-                prior_neighbors[2] = cells[i+1][j-1];
+                prior_neighbors[1] = image[i][j-1];
+                prior_neighbors[2] = image[i+1][j-1];
             }
             if(i > 0) {
-                prior_neighbors[3] = cells[i-1][j];
+                prior_neighbors[3] = image[i-1][j];
             }
         } catch(Exception e) {}
 
         return prior_neighbors;
     }
 
-    public static int[][] getHole(int[][] image_a, int label){
+    public static int[][] getHole(int[][] image, int label) {
         int[][] subimage = init();
 
-        for(int i = 0; i < SIZE; i++){
-            for(int j = 0; j < SIZE; j++){
-                if(image_a[i][j] == label){
+        for(int i = 0; i < SIZE; i++) {
+            for(int j = 0; j < SIZE; j++) {
+                if(image[i][j] == label) {
                     subimage[i][j] = 1;
                 }
             }
@@ -377,13 +382,29 @@ class DigitRecognizer {
 
         return subimage;
     }
-    
-    public static int[][] clean(int[][] image_a, int min_area){
-        for(int i = 0; i < SIZE; i++){
-            for(int j = 0; j < SIZE; j++){
 
+    public static int[][] clean(int[][] image) {
+        int[][] cleaned_image = image;
+
+        for(int i = 0; i < SIZE; i++) {
+            for(int j = 0; j < SIZE; j++) {
+                try {
+                    if( image[i-1][j-1] == 0 &&
+                            image[i][j-1]   == 0 &&
+                            image[i+1][j-1] == 0 &&
+                            image[i-1][j]   == 0 &&
+                            image[i][j]     == 1 &&
+                            image[i+1][j]   == 0 &&
+                            image[i-1][j+1] == 0 &&
+                            image[i][j+1]   == 0 &&
+                            image[i+1][j+1] == 0) {
+
+                        cleaned_image[i][j] = 0;
+                    }
+                } catch(Exception e) {}
             }
         }
-        return init();
+
+        return cleaned_image;
     }
 }
