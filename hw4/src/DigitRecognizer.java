@@ -9,67 +9,152 @@ import java.util.ArrayList;
 class DigitRecognizer {
 
     private static int SIZE = 128;
-    public static List<Integer> parent_arr;
-    public static int[][] labeled_image;
 
     public static DRView view;
 
     public static void main(String[] args) throws Exception {
+        int[][] image;
+        
+        image = read("zero.raw");
+        System.out.println(recognizeDigit(image));
+
+        image = read("one.raw");
+        System.out.println(recognizeDigit(image));
+
+        image = read("two.raw");
+        System.out.println(recognizeDigit(image));
+
+        image = read("three.raw");
+        System.out.println(recognizeDigit(image));
+        
+        image = read("four.raw");
+        System.out.println(recognizeDigit(image));
+
+        image = read("five.raw");
+        System.out.println(recognizeDigit(image));
+
+        image = read("six.raw");
+        System.out.println(recognizeDigit(image));
+
+        image = read("seven.raw");
+        System.out.println(recognizeDigit(image));
+
+        image = read("eight.raw");
+        System.out.println(recognizeDigit(image));
+
+        image = read("nine.raw");
+        System.out.println(recognizeDigit(image));
+    }
+
+    public static int recognizeDigit(int[][] image){
+        int[] bbox = getBoundingBox(image);
+        int max_len = Math.max(bbox[0] + bbox[2], bbox[1] + bbox[3]);
+        int close_amount = max_len * 1/7;
+        return recognizeDigit(image, close_amount);
+    }
+
+    public static int recognizeDigit(int[][] image, int n){
         int[][] image_a = init();
         int[][] image_b = init();
         int[][] image_c = init();
         int[][] image_d = init();
         int[][] image_e = init();
 
-        image_a = read("six.raw");
-        image_a = center(image_a);
+        image_a = center(image);
         image_a = close(image_a, 3);
-        image_b = close(image_a, 20);
-        image_c = diff(image_b, image_a);
+        image_b = close(image_a, n);
+        image_c = dilate(erode(diff(image_b, image_a)));
+        
+        List labelHoles_result = labelHoles(image_c);
+        int[][] labeled_image = (int[][])labelHoles_result.get(0);
+        List<Integer> parents = (List<Integer>)labelHoles_result.get(1);
 
-        labelHoles(image_c);
-        for(int j = 0; j < SIZE; j++) {
-            for(int k = 0; k < SIZE; k++) {
-                System.out.print(labeled_image[j][k]);
-            }
-            System.out.println();
-        }
-        System.out.println();
-        System.out.println();
+        int num_lids = 0;
+        int num_lakes = 0;
+        List<double[]> lid_vectors = new ArrayList<double[]>();
 
-        for(int i = 1; i < parent_arr.size(); i++) {
-            int[][] subimage = init();
-            if(parent_arr.get(i) == 0) {
-                subimage = getHole(labeled_image, i);
-                image_d = diff(dilate(subimage), image_a);
-                image_e = diff(image_d, subimage);
+        for(int i = 1; i < parents.size(); i++) {
+            int[][] image_component = init();
+            if(parents.get(i) == 0) {
+                image_component = getHole(labeled_image, i);
+                image_d = diff(dilate(image_component), image_a);
+                image_e = diff(image_d, image_component);
                 image_e = clean(image_e);
 
-                for(int j = 0; j < SIZE; j++) {
-                    for(int k = 0; k < SIZE; k++) {
-                        System.out.print(image_e[j][k]);
+
+                //check if lid
+                boolean has_lid = false;
+                for(int j = 0; j < SIZE; j++){
+                    for(int k = 0; k < SIZE; k++){
+                        if(image_e[j][k] == 1){
+                            has_lid = true;
+                        }
                     }
-                    System.out.println();
                 }
-                System.out.println();
-                System.out.println();
+
+                if(has_lid){
+                    num_lids++;
+                    int[] component_center = getCenter(image_component);
+                    int[] lid_center = getCenter(image_e);
+
+                    //lid unit direction vector
+                    double[] lid_vector = new double[2];
+                    lid_vector[0] = lid_center[0] - component_center[0];
+                    lid_vector[1] = lid_center[0] - component_center[1];
+
+                    double len = Math.sqrt(Math.pow(lid_vector[0], 2)+ Math.pow(lid_vector[1], 2));
+
+                    lid_vector[0] = (lid_vector[0]/len);
+                    lid_vector[1] = (lid_vector[1]/len);
+
+                    lid_vectors.add(lid_vector);
+                }
+                else{
+                    num_lakes++;
+                }
             }
-
         }
-
-        view = new DRView();
-        view.setup();
-
-        //view.updateImage(image_e);
-
-        /*
-                for(int i = 0; i < SIZE; i++){
-                    for(int j = 0; j < SIZE; j++){
-                        System.out.print(image[i][j]);
-                    }
-                    System.out.println();
+       
+        int number = -1; 
+        if(num_lakes >=2){
+           number = 8; 
+        }
+        else if(num_lakes == 1){
+            if(num_lids == 0){
+                number = 0;
+            }
+            else if(num_lids == 1){
+                if(lid_vectors.get(0)[0] > 0){
+                number = 6;
                 }
-                */
+                else if(lid_vectors.get(0)[0] < 0){
+                     number = 9;
+                }
+            }
+            else{
+                number = 4;
+            }
+        }
+        else{
+            if(num_lids == 0){
+                number = 1;
+            }
+            else if(num_lids == 1){
+                number = 7;
+            }
+            else if(num_lids == 2){
+                if(lid_vectors.get(0)[0] < 0 && lid_vectors.get(1)[0] > 0){
+                    number = 2;
+                }
+                else if(lid_vectors.get(0)[0] > 0 && lid_vectors.get(1)[0] < 0){
+                    number = 5;
+                }
+            }
+            else{
+                number = 3;
+            }
+        }
+        return number;
     }
 
     public static int[][] init() {
@@ -98,6 +183,34 @@ class DigitRecognizer {
     }
 
     public static int[][] center(int[][] image) {
+        int[] center = getCenter(image);
+
+        int offset_x = (SIZE/2) - center[0];
+        int offset_y = (SIZE/2) - center[1];
+
+        int[][] translated_image = init();
+
+        for(int i = 0; i < SIZE; i++) {
+            for(int j = 0; j < SIZE; j++) {
+                try {
+                    translated_image[i+offset_x][j+offset_y] = image[i][j];
+                } catch(Exception e) {}
+            }
+        }
+
+        return translated_image;
+    }
+
+    public static int[] getCenter(int[][] image){
+        int[] bbox = getBoundingBox(image);
+        int center_x = (bbox[0] + bbox[2]) / 2;
+        int center_y = (bbox[1] + bbox[3]) / 2;
+
+        int[] center = {center_x, center_y};
+        return center;
+    }
+
+    public static int[] getBoundingBox(int[][] image){
         int min_x = Integer.MAX_VALUE;
         int max_x = 0;
         int min_y = Integer.MAX_VALUE;
@@ -122,23 +235,12 @@ class DigitRecognizer {
             }
         }
 
-        int center_x = (max_x + min_x) / 2;
-        int center_y = (max_y + min_y) / 2;
-
-        int offset_x = (SIZE/2) - center_x;
-        int offset_y = (SIZE/2) - center_y;
-
-        int[][] translated_image = init();
-
-        for(int i = 0; i < SIZE; i++) {
-            for(int j = 0; j < SIZE; j++) {
-                try {
-                    translated_image[i+offset_x][j+offset_y] = image[i][j];
-                } catch(Exception e) {}
-            }
-        }
-
-        return translated_image;
+        int[] bounding_box = new int[4];
+        bounding_box[0] = min_x;
+        bounding_box[1] = min_y;
+        bounding_box[2] = max_x;
+        bounding_box[3] = max_y;
+        return bounding_box;
     }
 
     public static int[][] dilate(int[][] image, int n) {
@@ -273,16 +375,16 @@ class DigitRecognizer {
         return diff_image;
     }
 
-    public static void labelHoles(int[][] image_a) {
-        labeled_image = init();
+    public static List labelHoles(int[][] image) {
+        int[][] labeled_image = init();
         int label = 1;
-        parent_arr = new ArrayList<Integer>();
-        parent_arr.add(0);
+        List<Integer> parents = new ArrayList<Integer>();
+        parents.add(0);
 
         //1st pass - for each cell in the grid
         for(int i = 0; i < SIZE; i++) {
             for(int j = 0; j < SIZE; j++) {
-                if(image_a[i][j] == 1) {
+                if(image[i][j] == 1) {
 
                     int[] pn = prior_neighbors(i, j, labeled_image);
 
@@ -299,7 +401,7 @@ class DigitRecognizer {
                         }
                     }
                     if(empty) {
-                        parent_arr.add(0);
+                        parents.add(0);
                         label++;
                     }
 
@@ -310,7 +412,7 @@ class DigitRecognizer {
                     for(int k = 0; k < 4; k++) {
                         int x = pn[k];
                         if (x != 0 && x != min) {
-                            union(min, x, parent_arr);
+                            union(min, x, parents);
                         }
                     }
                 }
@@ -320,26 +422,29 @@ class DigitRecognizer {
         //2nd pass - for each cell in the grid
         for(int i = 0; i < SIZE; i++) {
             for(int j = 0; j < SIZE; j++) {
-                if(image_a[i][j] == 1) {
-                    labeled_image[i][j] = find(labeled_image[i][j], parent_arr);
+                if(image[i][j] == 1) {
+                    labeled_image[i][j] = find(labeled_image[i][j], parents);
                 }
             }
         }
-
+        List result = new ArrayList(2);
+        result.add(labeled_image);
+        result.add(parents);
+        return result;
     }
 
-    public static int find(int i, List<Integer> parent_arr) {
-        while (parent_arr.get(i) != 0) {
-            i = parent_arr.get(i);
+    public static int find(int i, List<Integer> parents) {
+        while (parents.get(i) != 0) {
+            i = parents.get(i);
         }
         return i;
     }
 
-    public static void union(int x, int y, List<Integer> parent_arr) {
-        int j = find(x, parent_arr);
-        int k = find(y, parent_arr);
+    public static void union(int x, int y, List<Integer> parents) {
+        int j = find(x, parents);
+        int k = find(y, parents);
         if (j != k) {
-            parent_arr.set(k, j);
+            parents.set(k, j);
         }
     }
 
@@ -370,17 +475,17 @@ class DigitRecognizer {
     }
 
     public static int[][] getHole(int[][] image, int label) {
-        int[][] subimage = init();
+        int[][] image_component = init();
 
         for(int i = 0; i < SIZE; i++) {
             for(int j = 0; j < SIZE; j++) {
                 if(image[i][j] == label) {
-                    subimage[i][j] = 1;
+                    image_component[i][j] = 1;
                 }
             }
         }
 
-        return subimage;
+        return image_component;
     }
 
     public static int[][] clean(int[][] image) {
