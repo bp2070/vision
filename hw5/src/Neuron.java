@@ -1,5 +1,6 @@
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Random;
 
 class Neuron{
     private List<Double> weights;
@@ -12,14 +13,15 @@ class Neuron{
     }
 
     /*
-     * @param size number of neurons in previous layer
+     * @param numWeights number of weights, i.e. size of previous layer
      */
-    public Neuron(int size){
-        hiddenWeight = 1.0;
+    public Neuron(int numWeights){
+        Random r = new Random();
+        hiddenWeight = r.nextDouble() - .5;
         error = 0.0;
-        this.weights = new ArrayList<Double>(size);
-        for(int i = 0; i < size; i++){
-            weights.add(1.0);
+        this.weights = new ArrayList<Double>(numWeights);
+        for(int i = 0; i < numWeights; i++){
+            weights.add(r.nextDouble() - .5);
         }
     }
 
@@ -42,15 +44,23 @@ class Neuron{
     public double getAxon(){
         return axon;
     }
-    public Double getWeight(int i){
+
+    public double getWeight(int i){
         return weights.get(i);
     }
+
+    public List<Double> getWeights(){
+        return weights;
+    }
+
     public int size(){
         return weights.size();
     }
+
     public void setAxon(Double axon){
         this.axon = axon;
     }
+
     public void setWeight(int i, double weight){
         weights.set(i, weight);
     }
