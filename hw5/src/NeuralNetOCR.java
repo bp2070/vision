@@ -20,16 +20,16 @@ class NeuralNetOCR {
         net = new ANN(14, 14, 12, 10);
 
         List<String> filenames = new ArrayList<String>();
-        filenames.add("0");
-        filenames.add("1");
-//        filenames.add("2");
-//        filenames.add("3");
-//        filenames.add("4");
-//        filenames.add("5");
-//        filenames.add("6");
-//        filenames.add("7");
-//        filenames.add("8");
-//        filenames.add("9");
+        filenames.add("res/0.raw");
+        filenames.add("res/1.raw");
+        filenames.add("res/2.raw");
+        filenames.add("res/3.raw");
+        filenames.add("res/4.raw");
+        filenames.add("res/5.raw");
+        filenames.add("res/6.raw");
+//        filenames.add("res/7.raw");
+//        filenames.add("res/8.raw");
+//        filenames.add("res/9.raw");
         
         train(filenames);
     }
@@ -49,20 +49,20 @@ class NeuralNetOCR {
 
         while(!trained) {
             int i = r.nextInt(filenames.size());
-            int target = Integer.parseInt(filenames.get(i).substring(0, 1));            
+            int target = Integer.parseInt(filenames.get(i).substring(4, 5));            
             int result = recognize(images.get(i));
-            System.out.println(", target: " + target + " result: " + result);
-            
             
             if(!(target == result)) {
                 //result incorrect, adjust weights
                 net.adjustWeights(gain, target);
 //                gain *= .95;
             }
-            
+
             try {
-                Thread.sleep(500);
+                Thread.sleep(100);
             } catch (InterruptedException ex) {}
+            System.out.println(" target: " + target + " result: " + result);
+            
         }
     }
 
@@ -111,7 +111,7 @@ class NeuralNetOCR {
                 first_index = i;
             }
             mean += axon;
-        }        
+        } 
         mean = mean / IMAGE_SIZE;
 
         //calc standard deviation
@@ -121,9 +121,7 @@ class NeuralNetOCR {
             std_dev += Math.pow(axon - mean, 2);
         }
         std_dev = Math.sqrt(std_dev / IMAGE_SIZE);
-        System.out.print("std dev: " + std_dev);
 
-//        return first_index;
         if(first - second > std_dev)
             return first_index;
         else return -1;

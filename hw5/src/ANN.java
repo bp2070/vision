@@ -85,6 +85,11 @@ class ANN {
             //for each neuron
             for(int j = 0; j < layer.size(); j++) {
                 Neuron n = layer.get(j);
+                double count = 0;
+                for(int k = 0; k < n.size(); k++){
+                    count += n.getWeights().get(k);
+                }
+                //System.out.printf("Node %d: %1.3f\n", j, count);
 
                 //calculate error
                 double error = calcError(i, j, target);
@@ -104,10 +109,10 @@ class ANN {
                     }
 
                     delta_w = gain * error * activation_in * prev_node_out;
-                    double weight = delta_w * n.getWeight(k);
+                    double weight = delta_w + n.getWeight(k);
                     n.setWeight(k, weight);
                 }
-                n.setHiddenWeight(delta_w * n.getHiddenWeight());
+                n.setHiddenWeight(delta_w + n.getHiddenWeight());
             }
         }
     }
