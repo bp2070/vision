@@ -89,7 +89,6 @@ class ANN {
                 for(int k = 0; k < n.size(); k++){
                     count += n.getWeights().get(k);
                 }
-                //System.out.printf("Node %d: %1.3f\n", j, count);
 
                 //calculate error
                 double error = calcError(i, j, target);
